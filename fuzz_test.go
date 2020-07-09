@@ -8,55 +8,83 @@ import (
 	"github.com/goburrow/quic/transport"
 )
 
+// Test and log handshake transactions
+func TestHandshake(t *testing.T) {
+	cid := make([]byte, transport.MaxCIDLength)
+	client := newClient(cid)
+	server := newServer(cid)
+	err := logHandshake(client, server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = logStream(client, server)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func logHandshake(client, server *transport.Conn) error {
-	b := make([]byte, 1200)
 	for i := 0; i < 10; i++ {
 		if client.IsEstablished() && server.IsEstablished() {
-			break
+			return nil
 		}
-		n, err := client.Read(b)
+		n, err := client.Read(buf)
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(fmt.Sprintf("client-%d", i), b[:n], 0644)
+		err = ioutil.WriteFile(fmt.Sprintf("client-%d", i), buf[:n], 0644)
 		if err != nil {
 			return err
 		}
-		n, err = server.Write(b[:n])
+		n, err = server.Write(buf[:n])
 		if err != nil {
 			return err
 		}
-		n, err = server.Read(b)
+		n, err = server.Read(buf)
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(fmt.Sprintf("server-%d", i), b[:n], 0644)
-		n, err = client.Write(b[:n])
+		err = ioutil.WriteFile(fmt.Sprintf("server-%d", i), buf[:n], 0644)
+		n, err = client.Write(buf[:n])
 		if err != nil {
 			return err
 		}
+	}
+	if !client.IsEstablished() || !server.IsEstablished() {
+		return fmt.Errorf("connection not established")
 	}
 	return nil
 }
 
-// Test and log handshake transactions
-func TestHandshake(t *testing.T) {
-	cid := make([]byte, transport.MaxCIDLength)
-	client, err := transport.Connect(cid, clientConfig)
+func logStream(client, server *transport.Conn) error {
+	msg := []byte("hello")
+	cs, err := client.Stream(2)
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
-	server, err := transport.Accept(cid, nil, serverConfig)
+	cs.Write(msg)
+	n, err := client.Read(buf)
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
-	err = logHandshake(client, server)
+	err = ioutil.WriteFile("client-stream-0", buf[:n], 0644)
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
-	if !client.IsEstablished() || !server.IsEstablished() {
-		t.Fatalf("connection not established")
+	ss, err := server.Stream(3)
+	if err != nil {
+		return err
 	}
+	ss.Write(msg)
+	n, err = server.Read(buf)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("server-stream-0", buf[:n], 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func TestServerInitial(t *testing.T) {

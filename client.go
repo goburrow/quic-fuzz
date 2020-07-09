@@ -5,22 +5,39 @@ import (
 )
 
 var clientConfig = newClientConfig()
-var buf = make([]byte, 1400)
 
+// FuzzClientInitial runs fuzzing client handling initial packet.
 func FuzzClientInitial(b []byte) int {
-	conn, err := transport.Connect([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, clientConfig)
-	if err != nil {
-		panic(err)
-	}
-	_, err = conn.Read(buf)
+	conn := newClient(cid)
+	_, err := conn.Read(buf)
 	if err != nil {
 		panic(err)
 	}
 	n, err := conn.Write(b)
+	conn.Read(buf)
 	if err != nil || n == 0 {
 		return 0
 	}
 	return 1
+}
+
+// FuzzClient runs fuzzing connected client connection.
+func FuzzClient(b []byte) int {
+	conn, _ := newEndpoint()
+	n, err := conn.Write(b)
+	conn.Read(buf)
+	if err != nil || n == 0 {
+		return 0
+	}
+	return 1
+}
+
+func newClient(scid []byte) *transport.Conn {
+	conn, err := transport.Connect(scid, clientConfig)
+	if err != nil {
+		panic(err)
+	}
+	return conn
 }
 
 func newClientConfig() *transport.Config {

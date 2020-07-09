@@ -8,8 +8,10 @@ import (
 
 var serverConfig = newServerConfig()
 
+// FuzzServerInitial runs fuzzing server handling initial packet.
 func FuzzServerInitial(b []byte) int {
-	h, err := transport.DecodeHeader(b, transport.MaxCIDLength)
+	h := transport.Header{}
+	_, err := h.Decode(b, transport.MaxCIDLength)
 	if err != nil {
 		return 0
 	}
@@ -18,10 +20,30 @@ func FuzzServerInitial(b []byte) int {
 		return 0
 	}
 	n, err := conn.Write(b)
+	conn.Read(buf)
 	if err != nil || n == 0 {
 		return 0
 	}
 	return 1
+}
+
+// FuzzServer runs fuzzing connected server connection.
+func FuzzServer(b []byte) int {
+	_, conn := newEndpoint()
+	n, err := conn.Write(b)
+	conn.Read(buf)
+	if err != nil || n == 0 {
+		return 0
+	}
+	return 1
+}
+
+func newServer(scid []byte) *transport.Conn {
+	conn, err := transport.Accept(scid, nil, serverConfig)
+	if err != nil {
+		panic(err)
+	}
+	return conn
 }
 
 func newServerConfig() *transport.Config {
