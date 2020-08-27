@@ -37,7 +37,8 @@ func newEndpoint() (client, server *transport.Conn) {
 	server = newServer(cid)
 
 	for i := 0; i < 5; i++ {
-		if client.IsEstablished() && server.IsEstablished() {
+		if client.ConnectionState() == transport.StateActive &&
+			server.ConnectionState() == transport.StateActive {
 			return
 		}
 		n, err := client.Read(buf)
@@ -57,7 +58,8 @@ func newEndpoint() (client, server *transport.Conn) {
 			panic(err)
 		}
 	}
-	if !client.IsEstablished() || !server.IsEstablished() {
+	if client.ConnectionState() != transport.StateActive ||
+		server.ConnectionState() != transport.StateActive {
 		panic("connection not established")
 	}
 	return

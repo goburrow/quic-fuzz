@@ -25,7 +25,8 @@ func TestHandshake(t *testing.T) {
 
 func logHandshake(client, server *transport.Conn) error {
 	for i := 0; i < 10; i++ {
-		if client.IsEstablished() && server.IsEstablished() {
+		if client.ConnectionState() == transport.StateActive &&
+			server.ConnectionState() == transport.StateActive {
 			return nil
 		}
 		n, err := client.Read(buf)
@@ -50,7 +51,8 @@ func logHandshake(client, server *transport.Conn) error {
 			return err
 		}
 	}
-	if !client.IsEstablished() || !server.IsEstablished() {
+	if client.ConnectionState() != transport.StateActive ||
+		server.ConnectionState() != transport.StateActive {
 		return fmt.Errorf("connection not established")
 	}
 	return nil
