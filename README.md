@@ -6,6 +6,6 @@ export GO111MODULE=off
 
 go get -u github.com/dvyukov/go-fuzz/go-fuzz github.com/dvyukov/go-fuzz/go-fuzz-build
 
-~/go/bin/go-fuzz-build
+~/go/bin/go-fuzz-build -tags quicfuzz
 ~/go/bin/go-fuzz -func "FuzzClientInitial" -workdir ClientInitial
 ```

@@ -1,4 +1,4 @@
-package quic
+package quicfuzz
 
 import (
 	"fmt"
@@ -24,10 +24,9 @@ func TestHandshake(t *testing.T) {
 }
 
 func logHandshake(client, server *transport.Conn) error {
-	for i := 0; i < 10; i++ {
-		if client.IsEstablished() && server.IsEstablished() {
-			return nil
-		}
+	i := 0
+	for client.ConnectionState() != transport.StateActive ||
+		server.ConnectionState() != transport.StateActive {
 		n, err := client.Read(buf)
 		if err != nil {
 			return err
@@ -36,29 +35,37 @@ func logHandshake(client, server *transport.Conn) error {
 		if err != nil {
 			return err
 		}
-		n, err = server.Write(buf[:n])
-		if err != nil {
-			return err
+		if n > 0 {
+			n, err = server.Write(buf[:n])
+			if err != nil {
+				return err
+			}
 		}
 		n, err = server.Read(buf)
 		if err != nil {
 			return err
 		}
 		err = ioutil.WriteFile(fmt.Sprintf("server-%d", i), buf[:n], 0644)
-		n, err = client.Write(buf[:n])
 		if err != nil {
 			return err
 		}
-	}
-	if !client.IsEstablished() || !server.IsEstablished() {
-		return fmt.Errorf("connection not established")
+		if n > 0 {
+			n, err = client.Write(buf[:n])
+			if err != nil {
+				return err
+			}
+		}
+		i++
+		if i > 5 {
+			return fmt.Errorf("connections not established")
+		}
 	}
 	return nil
 }
 
 func logStream(client, server *transport.Conn) error {
 	msg := []byte("hello")
-	cs, err := client.Stream(2)
+	cs, err := client.Stream(0)
 	if err != nil {
 		return err
 	}
@@ -71,7 +78,7 @@ func logStream(client, server *transport.Conn) error {
 	if err != nil {
 		return err
 	}
-	ss, err := server.Stream(3)
+	ss, err := server.Stream(1)
 	if err != nil {
 		return err
 	}

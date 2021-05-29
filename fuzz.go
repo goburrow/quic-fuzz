@@ -1,4 +1,4 @@
-package quic
+package quicfuzz
 
 import (
 	"crypto/tls"
@@ -36,29 +36,33 @@ func newEndpoint() (client, server *transport.Conn) {
 	client = newClient(cid)
 	server = newServer(cid)
 
-	for i := 0; i < 5; i++ {
-		if client.IsEstablished() && server.IsEstablished() {
-			return
-		}
+	i := 0
+	for client.ConnectionState() != transport.StateActive ||
+		server.ConnectionState() != transport.StateActive {
 		n, err := client.Read(buf)
 		if err != nil {
 			panic(err)
 		}
-		n, err = server.Write(buf[:n])
-		if err != nil {
-			panic(err)
+		if n > 0 {
+			n, err = server.Write(buf[:n])
+			if err != nil {
+				panic(err)
+			}
 		}
 		n, err = server.Read(buf)
 		if err != nil {
 			panic(err)
 		}
-		n, err = client.Write(buf[:n])
-		if err != nil {
-			panic(err)
+		if n > 0 {
+			n, err = client.Write(buf[:n])
+			if err != nil {
+				panic(err)
+			}
 		}
-	}
-	if !client.IsEstablished() || !server.IsEstablished() {
-		panic("connection not established")
+		i++
+		if i > 5 {
+			panic("connections not established")
+		}
 	}
 	return
 }

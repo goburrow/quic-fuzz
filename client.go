@@ -1,4 +1,4 @@
-package quic
+package quicfuzz
 
 import (
 	"github.com/goburrow/quic/transport"
@@ -14,19 +14,20 @@ func FuzzClientInitial(b []byte) int {
 		panic(err)
 	}
 	n, err := conn.Write(b)
-	conn.Read(buf)
 	if err != nil || n == 0 {
 		return 0
 	}
+	conn.Read(buf)
 	return 1
 }
 
 // FuzzClient runs fuzzing connected client connection.
 func FuzzClient(b []byte) int {
-	conn, _ := newEndpoint()
-	n, err := conn.Write(b)
+	conn, peer := newEndpoint()
+	_, err1 := conn.Write(b)
+	_, err2 := conn.Write(peer.BuildPacket(b))
 	conn.Read(buf)
-	if err != nil || n == 0 {
+	if err1 != nil || err2 != nil {
 		return 0
 	}
 	return 1

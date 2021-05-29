@@ -1,4 +1,4 @@
-package quic
+package quicfuzz
 
 import (
 	"crypto/tls"
@@ -29,10 +29,11 @@ func FuzzServerInitial(b []byte) int {
 
 // FuzzServer runs fuzzing connected server connection.
 func FuzzServer(b []byte) int {
-	_, conn := newEndpoint()
-	n, err := conn.Write(b)
+	peer, conn := newEndpoint()
+	_, err1 := conn.Write(b)
+	_, err2 := conn.Write(peer.BuildPacket(b))
 	conn.Read(buf)
-	if err != nil || n == 0 {
+	if err1 != nil || err2 != nil {
 		return 0
 	}
 	return 1
