@@ -34,7 +34,7 @@ func FuzzClient(b []byte) int {
 }
 
 func newClient(scid []byte) *transport.Conn {
-	conn, err := transport.Connect(scid, clientConfig)
+	conn, err := transport.Connect(scid, scid, clientConfig)
 	if err != nil {
 		panic(err)
 	}

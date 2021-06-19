@@ -37,8 +37,7 @@ func newEndpoint() (client, server *transport.Conn) {
 	server = newServer(cid)
 
 	i := 0
-	for client.ConnectionState() != transport.StateActive ||
-		server.ConnectionState() != transport.StateActive {
+	for !client.HandshakeComplete() || !server.HandshakeComplete() {
 		n, err := client.Read(buf)
 		if err != nil {
 			panic(err)

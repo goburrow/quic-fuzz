@@ -9,3 +9,9 @@ go get -u github.com/dvyukov/go-fuzz/go-fuzz github.com/dvyukov/go-fuzz/go-fuzz-
 ~/go/bin/go-fuzz-build -tags quicfuzz
 ~/go/bin/go-fuzz -func "FuzzClientInitial" -workdir ClientInitial
 ```
+
+Alternatively, using fuzz.sh:
+```
+# rm quicfuzz-fuzz.zip
+GO111MODULE=off ./fuzz.sh Client
+```

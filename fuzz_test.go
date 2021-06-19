@@ -25,8 +25,7 @@ func TestHandshake(t *testing.T) {
 
 func logHandshake(client, server *transport.Conn) error {
 	i := 0
-	for client.ConnectionState() != transport.StateActive ||
-		server.ConnectionState() != transport.StateActive {
+	for !client.HandshakeComplete() || !server.HandshakeComplete() {
 		n, err := client.Read(buf)
 		if err != nil {
 			return err
